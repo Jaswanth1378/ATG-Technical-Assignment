@@ -1,5 +1,5 @@
-import { HfInference } from '@huggingface/inference';
 import fetch from 'node-fetch'; // ensure node-fetch is installed for REST API calls
+import { HfInference } from '@huggingface/inference';
 
 export class ModelLoader {
     constructor() {
@@ -11,6 +11,7 @@ export class ModelLoader {
     async initialize() {
         try {
             console.log('🤖 Initializing AI model...');
+            // Test the model with a simple query
             await this.hf.textGeneration({
                 model: this.modelName,
                 inputs: 'Hello',
@@ -27,10 +28,13 @@ export class ModelLoader {
     }
 
     async generateResponse(prompt, context = '') {
-        if (!this.isInitialized) return await this.getFallbackResponse(prompt);
+        if (!this.isInitialized) {
+            return await this.getFallbackResponse(prompt);
+        }
 
         try {
             const fullPrompt = context ? `${context}\nUser: ${prompt}\nBot:` : `User: ${prompt}\nBot:`;
+
             const response = await this.hf.textGeneration({
                 model: this.modelName,
                 inputs: fullPrompt,
@@ -50,69 +54,78 @@ export class ModelLoader {
         return cleaned || "I understand what you're saying. Could you tell me more?";
     }
 
-    isFallbackQuery(lowerPrompt) {
-        const fallbackKeywords = [
-            'capital of', '+', 'plus', '-', 'minus', 'color', 'colour', 'planet',
-            'days in', 'how many days', 'water', 'freeze', 'boil', 'language',
-            'who is', 'who was', 'largest animal', 'fastest animal', 'weather',
-            'time', 'schedule', 'productivity', 'health', 'exercise', 'wellness',
-            'food', 'cook', 'recipe', 'money', 'budget', 'save', 'learn', 'skill', 'study'
-        ];
-
-        return fallbackKeywords.some(keyword => lowerPrompt.includes(keyword));
-    }
-
     async getFallbackResponse(prompt) {
         const lowerPrompt = prompt.toLowerCase();
 
-        // --- Capitals ---
-        if (lowerPrompt.includes('capital of')) {
+        // 🌍 Capital of countries (fixed with fullText=true)
+        if (lowerPrompt.includes('capital')) {
             const match = prompt.match(/capital of\s+([a-zA-Z ]+)/i);
             if (match) {
                 const country = match[1].replace(/[?.,!]/g, '').trim();
                 try {
-                    const res = await fetch(`https://restcountries.com/v3.1/name/${country}?fields=capital`);
+                    const res = await fetch(`https://restcountries.com/v3.1/name/${country}?fullText=true&fields=capital`);
                     const data = await res.json();
+
                     if (data && data[0] && data[0].capital) {
                         return `The capital of ${country} is ${data[0].capital[0]}.`;
+                    } else {
+                        return `Sorry, I couldn't find the capital of ${country}.`;
                     }
-                    return `Sorry, I couldn't find the capital of ${country}.`;
                 } catch (err) {
                     return `Sorry, I had trouble fetching the capital of ${country}.`;
                 }
             }
         }
 
-        // --- Basic Math ---
+        // ➕ Basic math
         if (lowerPrompt.includes('what is') && (lowerPrompt.includes('+') || lowerPrompt.includes('plus'))) {
             const numbers = lowerPrompt.match(/\d+/g);
             if (numbers && numbers.length >= 2) {
-                return `${numbers[0]} plus ${numbers[1]} equals ${parseInt(numbers[0]) + parseInt(numbers[1])}.`;
+                const sum = parseInt(numbers[0]) + parseInt(numbers[1]);
+                return `${numbers[0]} plus ${numbers[1]} equals ${sum}.`;
             }
         }
 
         if (lowerPrompt.includes('what is') && (lowerPrompt.includes('-') || lowerPrompt.includes('minus'))) {
             const numbers = lowerPrompt.match(/\d+/g);
             if (numbers && numbers.length >= 2) {
-                return `${numbers[0]} minus ${numbers[1]} equals ${parseInt(numbers[0]) - parseInt(numbers[1])}.`;
+                const difference = parseInt(numbers[0]) - parseInt(numbers[1]);
+                return `${numbers[0]} minus ${numbers[1]} equals ${difference}.`;
             }
         }
 
-        // --- Colors ---
+        // 🌈 Colors
         if (lowerPrompt.includes('color') || lowerPrompt.includes('colour')) {
             if (lowerPrompt.includes('sky')) return "The sky is typically blue during the day.";
             if (lowerPrompt.includes('grass')) return "Grass is typically green.";
             if (lowerPrompt.includes('sun')) return "The sun appears yellow or white.";
         }
 
-        // --- Planets ---
+        // 📅 Days and time
+        if (lowerPrompt.includes('days in') || lowerPrompt.includes('how many days')) {
+            if (lowerPrompt.includes('week')) return "There are 7 days in a week.";
+            if (lowerPrompt.includes('year')) return "There are 365 days in a regular year, and 366 days in a leap year.";
+            if (lowerPrompt.includes('month')) return "Most months have 30 or 31 days, except February which has 28 days (29 in leap years).";
+        }
+
+        // 🔬 Basic science
+        if (lowerPrompt.includes('water') && lowerPrompt.includes('boil')) {
+            return "Water boils at 100°C (212°F) at sea level.";
+        }
+        if (lowerPrompt.includes('water') && lowerPrompt.includes('freeze')) {
+            return "Water freezes at 0°C (32°F) at sea level.";
+        }
+
+        // 🪐 Planets
         if (lowerPrompt.includes('planet')) {
-            if (lowerPrompt.includes('closest to sun') || lowerPrompt.includes('nearest to sun')) return "Mercury is the planet closest to the Sun.";
+            if (lowerPrompt.includes('closest to sun') || lowerPrompt.includes('nearest to sun')) {
+                return "Mercury is the planet closest to the Sun.";
+            }
             if (lowerPrompt.includes('largest')) return "Jupiter is the largest planet in our solar system.";
             if (lowerPrompt.includes('how many')) return "There are 8 planets in our solar system.";
         }
 
-        // --- Default fallback responses ---
+        // Default fallback
         const defaultResponses = [
             "That's interesting! Can you tell me more about that?",
             "I see what you mean. How does that make you feel?",
