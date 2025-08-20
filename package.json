@@ -1,24 +1,17 @@
 {
-  "name": "daily-life-chatbot",
+  "name": "daily-life-assistant",
   "version": "1.0.0",
-  "description": "An enhanced chatbot with daily life features using Hugging Face models",
-  "main": "main.js",
-  "type": "module",
+  "description": "AI-powered daily life assistant chatbot",
+  "main": "src/main.js",
   "scripts": {
-    "start": "node main.js",
-    "dev": "node main.js"
+    "start": "node src/main.js",
+    "dev": "node --watch src/main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": ["chatbot", "ai", "assistant", "daily-life"],
+  "author": "",
+  "license": "MIT",
   "dependencies": {
-    "@huggingface/inference": "^2.8.1",
-    "node-fetch": "^3.3.2",
     "readline": "^1.3.0"
-  },
-  "keywords": [
-    "chatbot",
-    "huggingface",
-    "ai",
-    "cli"
-  ],
-  "author": "Your Name",
-  "license": "MIT"
+  }
 }
